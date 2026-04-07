@@ -1,5 +1,5 @@
 -- ==========================================
--- KAISER RIVALS V3: TOTAL CONTROL
+-- KAISER RIVALS V4: REFINED CONTROL
 -- ==========================================
 local Players = game:GetService("Players")
 local Debris = game:GetService("Debris")
@@ -10,17 +10,17 @@ local p = Players.LocalPlayer
 local char = p.Character or p.CharacterAdded:Wait()
 
 -- ==========================================
--- 1. GUI COMPACTA Y MOVIBLE (FIXED)
+-- 1. GUI COMPACTA (FIXED)
 -- ==========================================
 local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
 local Main = Instance.new("Frame", ScreenGui)
-Main.Name = "KaiserV3"
+Main.Name = "KaiserV4"
 Main.Size = UDim2.new(0, 130, 0, 180)
 Main.Position = UDim2.new(0.85, 0, 0.4, 0)
 Main.BackgroundColor3 = Color3.fromRGB(5, 5, 15)
 Main.BackgroundTransparency = 0.2
 Main.Active = true
-Main.Draggable = true -- Para que lo muevas donde quieras
+Main.Draggable = true
 
 Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 10)
 local stroke = Instance.new("UIStroke", Main)
@@ -53,7 +53,7 @@ local function getBall()
     if not root then return nil end
     
     local targetBall = nil
-    local dist = 25 -- Rango aumentado para que no falle
+    local dist = 30 -- Rango un poco más amplio
     
     for _, obj in pairs(workspace:GetDescendants()) do
         if obj:IsA("BasePart") and (obj.Name:lower():find("ball") or obj.Name:lower():find("football")) then
@@ -70,28 +70,26 @@ local function getBall()
 end
 
 -- ==========================================
--- 3. HABILIDADES REESCRITAS
+-- 3. HABILIDADES REFINADAS
 -- ==========================================
 
--- [A] KAISER IMPACT (Rápido y Letal)
+-- [A] KAISER IMPACT (Fuerza Controlada)
 local function kaiserImpact()
     local ball = getBall()
     local root = char:FindFirstChild("HumanoidRootPart")
     
     if ball and root then
-        -- Teletransportar la pelota levemente al frente para asegurar el tiro
         ball.CFrame = root.CFrame * CFrame.new(0, -1, -3)
         ball.Velocity = Vector3.new(0,0,0)
         
-        task.wait(0.1) -- Delay mínimo para "sentir" el impacto
+        task.wait(0.05)
         
         local bv = Instance.new("BodyVelocity", ball)
         bv.MaxForce = Vector3.new(1e8, 1e8, 1e8)
-        -- Tiro ultra tenso
-        bv.Velocity = (workspace.CurrentCamera.CFrame.LookVector * 420) + Vector3.new(0, 8, 0)
-        Debris:AddItem(bv, 0.12)
+        -- POTENCIA REDUCIDA: de 420 a 150 para que no se buguee
+        bv.Velocity = (workspace.CurrentCamera.CFrame.LookVector * 150) + Vector3.new(0, 2, 0)
+        Debris:AddItem(bv, 0.1)
         
-        -- Efecto Visual de Rayo
         local att0 = Instance.new("Attachment", ball)
         local att1 = Instance.new("Attachment", root)
         local beam = Instance.new("Beam", ball)
@@ -102,7 +100,7 @@ local function kaiserImpact()
     end
 end
 
--- [B] EMPEROR'S ROUTE (Zig-Zag de 3 tiempos con Balón)
+-- [B] EMPEROR'S ROUTE (Fijo y con Balón)
 local isDribbling = false
 local function emperorsRoute()
     local ball = getBall()
@@ -111,20 +109,31 @@ local function emperorsRoute()
     if ball and root and not isDribbling then
         isDribbling = true
         
+        -- Detenemos la pelota temporalmente para evitar que la física la mueva sola
+        if ball:FindFirstChild("BodyVelocity") then ball.BodyVelocity:Destroy() end
+        ball.Velocity = Vector3.new(0,0,0)
+
         local offsets = {
-            Vector3.new(-10, 0, -5), -- Paso 1: Izquierda
-            Vector3.new(20, 0, -5),  -- Paso 2: Derecha violenta
-            Vector3.new(-10, 0, -12) -- Paso 3: Al frente
+            Vector3.new(-8, 0, -4),  -- Más corto
+            Vector3.new(15, 0, -4),  -- Más corto
+            Vector3.new(-8, 0, -10)  -- Más corto
         }
         
         for _, offset in ipairs(offsets) do
-            -- Mover Jugador
             local targetPos = root.CFrame * offset
-            root.CFrame = CFrame.new(targetPos.Position, targetPos.Position + root.CFrame.LookVector)
+            -- Tween suave para el jugador en lugar de CFrame brusco
+            local tweenInfo = TweenInfo.new(0.15, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
+            local tween = TweenService:Create(root, tweenInfo, {CFrame = CFrame.new(targetPos.Position, targetPos.Position + root.CFrame.LookVector)})
+            tween:Play()
             
-            -- PEGAR EL BALÓN AL JUGADOR
-            ball.CFrame = root.CFrame * CFrame.new(0, -1, -3)
-            ball.Velocity = Vector3.new(0,0,0)
+            -- Mantener la pelota frente al jugador constantemente durante el tween
+            local conn
+            conn = RunService.RenderStepped:Connect(function()
+                if ball and root then
+                    ball.CFrame = root.CFrame * CFrame.new(0, -1, -3)
+                    ball.Velocity = Vector3.new(0,0,0)
+                end
+            end)
             
             -- Efecto de rastro
             local p = Instance.new("Part", workspace)
@@ -134,12 +143,13 @@ local function emperorsRoute()
             Debris:AddItem(p, 0.3)
             
             task.wait(0.15)
+            conn:Disconnect() -- Desconectar el loop al terminar el paso
         end
         isDribbling = false
     end
 end
 
--- [C] MAGNUS SHOT (Tiro con curva descendente)
+-- [C] MAGNUS SHOT (Tiro Recto Rápido, sin picada)
 local function magnusShot()
     local ball = getBall()
     local root = char:FindFirstChild("HumanoidRootPart")
@@ -148,32 +158,18 @@ local function magnusShot()
         ball.CFrame = root.CFrame * CFrame.new(0, -1, -3)
         ball.Velocity = Vector3.new(0,0,0)
         
-        -- Aura roja de poder
         local h = Instance.new("Highlight", char)
         h.FillColor = Color3.fromRGB(255, 0, 0)
         Debris:AddItem(h, 0.5)
         
-        task.wait(0.2)
+        task.wait(0.1)
         
-        -- Física del Magnus: Sube y luego baja
-        local vel = (workspace.CurrentCamera.CFrame.LookVector * 250) + Vector3.new(0, 60, 0)
-        ball.Velocity = vel
+        local bv = Instance.new("BodyVelocity", ball)
+        bv.MaxForce = Vector3.new(1e8, 1e8, 1e8)
+        -- POTENCIA REDUCIDA: tiro recto rápido y bajo
+        bv.Velocity = (workspace.CurrentCamera.CFrame.LookVector * 180) + Vector3.new(0, 1, 0)
+        Debris:AddItem(bv, 0.15)
         
-        -- Aplicar fuerza hacia abajo después de un momento
-        task.delay(0.3, function()
-            if ball then
-                local drop = Instance.new("BodyVelocity", ball)
-                drop.MaxForce = Vector3.new(0, 1e8, 0)
-                drop.Velocity = Vector3.new(0, -150, 0) -- Caída violenta
-                Debris:AddItem(drop, 0.2)
-                
-                -- Partículas de impacto en el aire
-                local exp = Instance.new("Explosion", workspace)
-                exp.Position = ball.Position; exp.BlastRadius = 0; exp.BlastPressure = 0
-            end
-        end)
-        
-        -- Trail morado/rojo
         local trail = Instance.new("Trail", ball)
         local a0 = Instance.new("Attachment", ball); a0.Position = Vector3.new(0,0.5,0)
         local a1 = Instance.new("Attachment", ball); a1.Position = Vector3.new(0,-0.5,0)
@@ -190,7 +186,6 @@ btnImpact.MouseButton1Click:Connect(kaiserImpact)
 btnRoute.MouseButton1Click:Connect(emperorsRoute)
 btnMagnus.MouseButton1Click:Connect(magnusShot)
 btnAwaken.MouseButton1Click:Connect(function()
-    -- Awakening simple: Más velocidad
     char.Humanoid.WalkSpeed = 28
     local h = Instance.new("Highlight", char)
     h.FillColor = Color3.fromRGB(150, 0, 255)
