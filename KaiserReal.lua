@@ -1,70 +1,60 @@
--- BLUE LOCK LEGACY: KAISER IMPACT (FIJO AL SUELO)
+-- BLUE LOCK LEGACY: KAISER IMPACT (FIXED TARGET)
 local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
 local Main = Instance.new("Frame", ScreenGui)
-Main.Size = UDim2.new(0, 150, 0, 110)
+Main.Size = UDim2.new(0, 150, 0, 100)
 Main.Position = UDim2.new(0.8, 0, 0.4, 0)
-Main.BackgroundColor3 = Color3.fromRGB(10, 10, 30)
-Main.Active = true
-Main.Draggable = true
+Main.BackgroundColor3 = Color3.fromRGB(0, 0, 40)
 Instance.new("UICorner", Main)
 
-local Title = Instance.new("TextLabel", Main)
-Title.Size = UDim2.new(1, 0, 0.4, 0)
-Title.Text = "KAISER IMPACT"
-Title.TextColor3 = Color3.fromRGB(0, 255, 255)
-Title.BackgroundTransparency = 1
-Title.Font = Enum.Font.GothamBold
-Title.TextSize = 16
-
-local function shoot()
+local function kaiserShot()
     local p = game.Players.LocalPlayer
     local char = p.Character
-    local root = char and char:FindFirstChild("HumanoidRootPart")
-    local hum = char and char:FindFirstChild("Humanoid")
+    local root = char:FindFirstChild("HumanoidRootPart")
     
-    -- 1. BUSCAR LA PELOTA
+    -- BUSCADOR DE PELOTA (IGNORA AL JUGADOR)
     local ball = nil
-    for _, v in pairs(workspace:GetDescendants()) do
-        -- Busca algo que se llame Ball o que tenga propiedades de pelota cerca tuyo
-        if v:IsA("BasePart") and (v.Name:lower():find("ball") or v.Name:lower():find("football")) then
-            if (root.Position - v.Position).Magnitude < 15 then
-                ball = v
+    for _, obj in pairs(workspace:GetDescendants()) do
+        if obj:IsA("BasePart") and (obj.Name:lower():find("ball") or obj.Name:lower():find("foot")) then
+            if (root.Position - obj.Position).Magnitude < 15 then
+                ball = obj
                 break
             end
         end
     end
 
-    if ball and hum then
-        -- [EFECTO DE CARGA]
-        hum.WalkSpeed = 0 -- Te frena a vos
-        local h = Instance.new("Highlight", char)
-        h.FillColor = Color3.fromRGB(0, 150, 255)
+    if ball then
+        -- CARGA (Te ancla al piso)
+        root.Anchored = true 
+        local effect = Instance.new("Highlight", char)
+        effect.FillColor = Color3.fromRGB(0, 200, 255)
         
-        task.wait(0.5) -- Pausa dramática de Kaiser
+        task.wait(0.5) -- Tiempo de carga
         
-        -- [EL DISPARO - AHORA SOLO A LA PELOTA]
-        hum.WalkSpeed = 16 -- Volvés a la normalidad
-        h:Destroy()
+        -- DISPARO (Fuerza directa a la bola)
+        root.Anchored = false
+        effect:Destroy()
         
-        local lookVec = workspace.CurrentCamera.CFrame.LookVector
-        -- Aplicamos la fuerza SOLO a la pelota
-        ball.Velocity = (lookVec * 390) + Vector3.new(0, 12, 0) 
+        local bv = Instance.new("BodyVelocity", ball)
+        bv.MaxForce = Vector3.new(1e6, 1e6, 1e6)
+        bv.Velocity = (workspace.CurrentCamera.CFrame.LookVector * 400) + Vector3.new(0, 15, 0)
         
-        -- Efecto de rastro azul
-        local trail = Instance.new("SelectionPartLasso", ball)
-        trail.Color3 = Color3.fromRGB(0, 255, 255)
-        trail.Part = ball
-        trail.Humanoid = hum
-        task.wait(0.4)
-        trail:Destroy()
+        -- Limpieza del rastro
+        game.Debris:AddItem(bv, 0.2)
+        
+        -- Efecto visual de rastro azul
+        local p1 = Instance.new("ParticleEmitter", ball)
+        p1.Color = ColorSequence.new(Color3.fromRGB(0, 255, 255))
+        p1.Size = NumberSequence.new(1)
+        p1.Lifetime = NumberRange.new(0.5)
+        game.Debris:AddItem(p1, 0.5)
     end
 end
 
 local btn = Instance.new("TextButton", Main)
-btn.Size = UDim2.new(0.9, 0, 0.5, 0)
-btn.Position = UDim2.new(0.05, 0, 0.45, 0)
-btn.Text = "¡DISPARAR!"
-btn.BackgroundColor3 = Color3.fromRGB(0, 80, 200)
+btn.Size = UDim2.new(0.9, 0, 0.6, 0)
+btn.Position = UDim2.new(0.05, 0, 0.2, 0)
+btn.Text = "KAISER IMPACT"
+btn.BackgroundColor3 = Color3.fromRGB(0, 100, 255)
 btn.TextColor3 = Color3.new(1, 1, 1)
 Instance.new("UICorner", btn)
-btn.MouseButton1Click:Connect(shoot)
+btn.MouseButton1Click:Connect(kaiserShot)
