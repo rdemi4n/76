@@ -1,3 +1,46 @@
+-- CONFIGURACIÓN DE BOTONES (Ajustalo a tu gusto)
+local ButtonSize = 1.5 -- 1.5 significa 50% más grande. 2.0 sería el doble.
+local MoveUp = 20 -- Cuántos píxeles querés subirlos
+
+local function AjustarBotones()
+    local PlayerGui = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
+    
+    -- Buscamos la carpeta de botones móviles (Suele llamarse Mobile o similar)
+    -- Este bucle recorre las interfaces buscando botones de acción
+    for _, gui in pairs(PlayerGui:GetDescendants()) do
+        if gui:IsA("ImageButton") or gui:IsA("TextButton") then
+            -- Filtramos los botones de juego (Shoot, Dash, Pass, etc.)
+            -- Normalmente tienen nombres específicos o están en ciertas carpetas
+            if gui.Parent.Name == "Mobile" or gui.Parent.Name == "MobileGui" or gui.Name:find("Button") then
+                
+                -- Agrandar el botón
+                gui.Size = UDim2.new(
+                    gui.Size.X.Scale * ButtonSize, 
+                    gui.Size.X.Offset * ButtonSize, 
+                    gui.Size.Y.Scale * ButtonSize, 
+                    gui.Size.Y.Offset * ButtonSize
+                )
+                
+                -- Subirlos un poco para que no estorben el dedo gordo
+                gui.Position = UDim2.new(
+                    gui.Position.X.Scale, 
+                    gui.Position.X.Offset, 
+                    gui.Position.Y.Scale, 
+                    gui.Position.Y.Offset - MoveUp
+                )
+                
+                -- Hacerlos un poco más visibles (opcional)
+                gui.ImageTransparency = 0.2 
+            end
+        end
+    end
+end
+
+-- Ejecutamos la optimización de antes + los botones
+print("Cargando Optimizador V3...")
+AjustarBotones()
+
+-- (Acá pegá el resto de tu código de optimización de FPS y Ping que ya tenías)
 -- OPTIMIZADOR INTEGRAL: FPS & NETWORK STABILITY
 -- Específico para Blue Lock Rivals
 
