@@ -1,64 +1,67 @@
--- BOOSTER DE FPS - BLUE LOCK RIVALS (OPTIMIZADO PARA DELTA)
--- Creado para reducir el lag sin romper el juego
+-- OPTIMIZADOR INTEGRAL: FPS & NETWORK STABILITY
+-- Específico para Blue Lock Rivals
 
 local Settings = {
     LowDetail = true,
     DisableShadows = true,
-    RemoveDecals = true,
-    ClearParticles = true
+    NetworkOptimize = true, -- Nueva función para el ping
+    ClearGarbage = true
 }
 
--- 1. OPTIMIZADOR DE RENDERIZADO
-local function Boost()
-    local g = game
-    local w = g.Workspace
-    local l = g.Lighting
-    local t = settings().Rendering
-
-    -- Bajar calidad de renderizado al mínimo
-    t.QualityLevel = Enum.QualityLevel.Level01
+-- 1. OPTIMIZACIÓN DE RED (Reducción de Lag de Envío/Recibo)
+if Settings.NetworkOptimize then
+    -- Ajusta la frecuencia de actualización de red para evitar saturación
+    settings().Network.IncomingReplicationLag = 0
     
-    -- Configuración de Iluminación (Adiós lag por sombras)
-    if Settings.DisableShadows then
-        l.GlobalShadows = false
-        l.FogEnd = 9e9
-        l.Brightness = 2
-    end
-
-    -- Limpieza de Texturas y Efectos en el mapa
-    for i, v in pairs(g:GetDescendants()) do
-        if Settings.RemoveDecals and (v:IsA("Decal") or v:IsA("Texture")) then
-            v:Destroy()
-        elseif Settings.ClearParticles and (v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Fire") or v:IsA("Smoke")) then
-            v.Enabled = false
-        elseif v:IsA("PostEffect") then -- Quita Bloom, Blur, etc.
-            v.Enabled = false
-        end
-    end
-    
-    -- Optimizar materiales pesados (Pasto, Metal, etc)
-    for i, v in pairs(w:GetDescendants()) do
-        if v:IsA("BasePart") and not v:IsA("MeshPart") then
-            v.Material = Enum.Material.SmoothPlastic
+    -- Intenta priorizar la conexión del juego
+    for i, v in pairs(game:GetService("NetworkClient"):GetChildren()) do
+        if v:IsA("ClientReplicator") then
+            v:SetOutgoingKBPSLimit(900) -- Limita el envío de datos basura
         end
     end
 end
 
--- 2. LIMPIADOR DE MEMORIA EN TIEMPO REAL
--- Esto evita que el juego se cierre (Crash) por falta de RAM en el celu
+-- 2. ELIMINACIÓN DE LAG VISUAL (Mantiene el juego fluido)
+local function Boost()
+    local g = game
+    local l = g.Lighting
+    
+    -- Forzar calidad mínima
+    settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+    l.GlobalShadows = false
+    l.FogEnd = 9e9
+
+    -- Borrar efectos pesados que saturan la memoria
+    for _, v in pairs(g:GetDescendants()) do
+        if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Explosion") then
+            v.Enabled = false
+        elseif v:IsA("Decal") or v:IsA("Texture") then
+            v:Destroy()
+        end
+    end
+
+    -- Convertir todo a plástico para liberar GPU
+    for _, v in pairs(workspace:GetDescendants()) do
+        if v:IsA("BasePart") and not v:IsA("MeshPart") then
+            v.Material = Enum.Material.SmoothPlastic
+            v.Reflectance = 0
+        end
+    end
+end
+
+-- 3. ANTI-CRASH (Limpieza de memoria cada 20 segundos)
 spawn(function()
-    while wait(30) do
+    while wait(20) do
         collectgarbage("collect")
+        setfpscap(60) -- Mantiene los FPS estables para no forzar la CPU
     end
 end)
 
--- Ejecutar el Boost
-print("Optimizador Activado - Blue Lock Rivals")
+-- Ejecución
 Boost()
 
--- Notificación visual en el juego
 game.StarterGui:SetCore("SendNotification", {
-    Title = "Optimizador Listo";
-    Text = "FPS Boosteados. ¡A meter goles, fiera!";
+    Title = "Opti V2 Activada";
+    Text = "FPS & Red optimizados. ¡A jugar!";
     Duration = 5;
 })
